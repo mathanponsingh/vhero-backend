@@ -1,0 +1,7 @@
+fastapi == 0.165.0
+slowapi == 0.1.10
+uvicorn == 0.54.0
+python-dotenv == 1.2.4
+pydantic == 2.14.4
+psycopg == 3.3.9
+slowapi == 0.1.10
