@@ -11,6 +11,7 @@ from schemas.user import Email_Schema, Otp_Verify_Schema
 from service.db import get_db
 from service.app import send_email
 from service.limiter import limiter
+from service.jwt_handler import create_access_token, verify_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -103,8 +104,10 @@ def verify_otp(
         UPDATE email_login
         SET otp_verified = true, otp_hash = NULL, otp_attempts = 0
         WHERE email = %s
+        RETURNING id
     """
     try:
+        token = ""
         with db.cursor(row_factory=dict_row) as cursor:
             cursor.execute(attempt_query, (email, MAX_ATTEMPTS))
             row = cursor.fetchone()
@@ -116,10 +119,11 @@ def verify_otp(
                 raise HTTPException(status_code=400, detail="Invalid or expired OTP")
 
             cursor.execute(success_query, (email,))
+            token = create_access_token(user_id=id)
         db.commit()
     except psycopg.Error:
         db.rollback()
         logger.exception("verify_otp failed")
         raise HTTPException(status_code=500, detail="Something went wrong")
 
-    return {"message": "OTP verified"}
+    return {"message": "OTP verified","token":token}
